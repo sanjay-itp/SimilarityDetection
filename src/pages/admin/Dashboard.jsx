@@ -31,7 +31,8 @@ export default function AdminDashboard() {
         actions={
           <>
             <button className="btn" type="button" onClick={exportReport}>Export semester report</button>
-            <Link className="btn btn--primary" to="/admin/users?new=1">New account</Link>
+            <Link className="btn" to="/admin/teachers?new=1">Add teacher</Link>
+            <Link className="btn btn--primary" to="/admin/students?new=1">Add student</Link>
           </>
         }
       />

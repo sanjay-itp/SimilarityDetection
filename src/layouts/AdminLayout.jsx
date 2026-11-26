@@ -4,7 +4,8 @@ import "../styles/admin.css";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", end: true },
-  { to: "/admin/users", label: "User management" },
+  { to: "/admin/students", label: "Students" },
+  { to: "/admin/teachers", label: "Teachers" },
   { to: "/admin/courses", label: "Courses & terms" },
   { to: "/admin/settings", label: "System settings" },
   { label: "Audit log", disabled: true },

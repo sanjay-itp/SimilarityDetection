@@ -24,7 +24,8 @@ import Submissions from "./pages/teacher/Submissions.jsx";
 import Report from "./pages/teacher/Report.jsx";
 
 import AdminDashboard from "./pages/admin/Dashboard.jsx";
-import Users from "./pages/admin/Users.jsx";
+import Students from "./pages/admin/Students.jsx";
+import Teachers from "./pages/admin/Teachers.jsx";
 import CoursesTerms from "./pages/admin/CoursesTerms.jsx";
 import SystemSettings from "./pages/admin/SystemSettings.jsx";
 
@@ -57,7 +58,9 @@ export default function App() {
 
             <Route path="/admin" element={<RequireRole role="admin"><AdminLayout /></RequireRole>}>
               <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<Users />} />
+              <Route path="students" element={<Students />} />
+              <Route path="teachers" element={<Teachers />} />
+              <Route path="users" element={<Navigate to="/admin/students" replace />} />
               <Route path="courses" element={<CoursesTerms />} />
               <Route path="settings" element={<SystemSettings />} />
             </Route>

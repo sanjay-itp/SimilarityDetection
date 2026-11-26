@@ -64,8 +64,10 @@ location / {
 3. Leave **Load demo data** ticked to try Origyn out with sample courses, teachers and students. Untick it for a clean start.
 4. As admin you then:
    - add faculties and semesters, then courses, under **Courses & terms**
-   - create teacher and student accounts under **User management**, or import students from a CSV file (`name, email, student_id, programme, semester`)
-   - hand each person the **temporary password** Origyn shows once, right after the account is created
+   - add students under **Students** (Add student opens a popup form), or import them from a CSV file (`name, email, student_id, programme, semester`)
+   - add teachers under **Teachers** (Add teacher opens a popup form where you can also assign courses)
+   - add more administrators under **System settings → Administrators**
+   - hand each person the **temporary password** Origyn shows in the popup right after the account is created
 
 Students see every course for their programme and semester. They cannot join courses themselves.
 
@@ -98,13 +100,13 @@ src/
   context/AuthContext.jsx  signed-in user, login / logout
   hooks/useAsync.js        loading / error state for api calls
   utils/format.js          dates, file sizes, CSV download
-  components/              shared UI: AppShell (sidebar), FileUpload, Drawer, ui.jsx
+  components/              shared UI: AppShell (sidebar), FileUpload, Modal (popup), ui.jsx
   layouts/                 StudentLayout, TeacherLayout, AdminLayout
   pages/
     auth/                  Login, Setup
     student/               Dashboard, Courses, Assignments, SubmitAssignment, Receipt
     teacher/               Dashboard, Courses, Course (+ AssignmentForm), ReviewQueue, Submissions, Report
-    admin/                 Dashboard, Users (+ drawer, teacher form), CoursesTerms, SystemSettings
+    admin/                 Dashboard, Students, Teachers, AccountModal (add-account popup), CoursesTerms, SystemSettings
   styles/
     base.css               tokens + shared components (all roles)
     auth.css               sign-in and setup only
@@ -142,7 +144,7 @@ Pages never touch storage directly; they only call functions on `api` in `src/se
 4. Students cannot join courses and see no auto-enrolment messages.
 5. Teacher dashboard: no "comparison jobs" panel.
 6. Teachers can attach the assignment as a **.pdf or .docx** file.
-7. Admin "New account": no "joins courses automatically" message.
+7. Admin "Add student": no "joins courses automatically" message. Adding students and teachers uses a centred popup, and students and teachers have separate lists.
 8. Admin dashboard: no "Submissions processed" card.
 9. Admin user list: no Reset password or Disable actions.
 10. No icons.

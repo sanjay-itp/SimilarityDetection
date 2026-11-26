@@ -4,13 +4,16 @@ import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useSetup } from "../../components/SetupGate.jsx";
-import { ErrorMessage, Field, Loading, Notice, PageHeader } from "../../components/ui.jsx";
+import { ErrorMessage, Field, Loading, Notice, PageHeader, Tag } from "../../components/ui.jsx";
+import AccountModal from "./AccountModal.jsx";
 import { download } from "../../utils/format.js";
 
 const ALL_FORMATS = [".docx", ".pdf", ".txt"];
 
 export default function SystemSettings() {
   const { data, loading, error } = useAsync(() => api.getSettings(), []);
+  const admins = useAsync(() => api.listUsers(), []);
+  const [adminOpen, setAdminOpen] = useState(false);
   const { logout } = useAuth();
   const { refresh } = useSetup();
   const navigate = useNavigate();
@@ -106,6 +109,33 @@ export default function SystemSettings() {
           <button className="btn btn--block btn--danger" type="button" onClick={reset}>Reset Origyn</button>
         </section>
       </div>
+
+      <section className="card" aria-labelledby="admins-title">
+        <div className="card__head">
+          <h2 className="card__title" id="admins-title">Administrators</h2>
+          <button className="btn btn--small" type="button" onClick={() => setAdminOpen(true)}>Add administrator</button>
+        </div>
+        {admins.data && (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Status</th></tr>
+              </thead>
+              <tbody>
+                {admins.data.users.filter((u) => u.role === "admin").map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.name}</td>
+                    <td>{u.email}</td>
+                    <td><Tag strong={u.status === "invited"}>{u.status === "invited" ? "Invited" : "Active"}</Tag></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <AccountModal role="admin" open={adminOpen} onClose={() => setAdminOpen(false)} onCreated={admins.reload} />
     </>
   );
 }
