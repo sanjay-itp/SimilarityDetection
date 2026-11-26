@@ -1,0 +1,38 @@
+/* ==========================================================================
+   Origyn · auth.css
+   Sign-in and first-run setup pages (.role-auth).
+   Plain white page with the dialog in the middle, no side colour panel.
+   ========================================================================== */
+
+.role-auth {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 16px;
+  background: var(--color-bg);
+}
+
+.role-auth .auth-dialog {
+  width: 100%;
+  max-width: 400px;
+  gap: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow-dialog);
+}
+.role-auth .auth-dialog--wide { max-width: 520px; }
+
+.role-auth .auth-dialog__header { display: flex; flex-direction: column; gap: 6px; }
+.role-auth .auth-dialog__brand { font-size: 14px; font-weight: 700; color: var(--color-accent); }
+.role-auth .auth-dialog__title { font-size: 24px; font-weight: 600; }
+.role-auth .auth-dialog__intro { color: var(--color-muted); }
+.role-auth .auth-dialog__hint { text-align: center; font-size: 13px; color: var(--color-muted); }
+.role-auth .auth-section { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--color-muted); }
+
+.role-auth .auth-footer { font-size: 12px; color: var(--color-muted); text-align: center; }
+
+@media (max-width: 480px) {
+  .role-auth .auth-dialog { padding: 24px; box-shadow: none; }
+}

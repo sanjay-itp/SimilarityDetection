@@ -1,0 +1,41 @@
+/* ==========================================================================
+   Origyn · admin.css
+   Administrator workspace only (.role-admin):
+   dashboard, user management + new account drawer, courses & terms, settings.
+   ========================================================================== */
+
+/* ---------- Dashboard: flag rate chart ---------- */
+.role-admin .chart { display: flex; align-items: flex-end; gap: 40px; min-height: 260px; padding: 16px 8px 0; overflow-x: auto; }
+.role-admin .bar { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.role-admin .bar__value { font-size: 12px; font-weight: 600; }
+.role-admin .bar__fill { width: 56px; height: calc(var(--value) * 1px); min-height: 2px; border-radius: 4px 4px 0 0; background: var(--color-line-strong); }
+.role-admin .bar--highlight .bar__fill { background: var(--color-accent); }
+.role-admin .bar__label { font-size: 12px; color: var(--color-muted); white-space: nowrap; }
+
+/* ---------- User management ---------- */
+.role-admin .users-layout,
+.role-admin .settings-layout,
+.role-admin .courses-layout { grid-template-columns: minmax(0, 1fr) 380px; }
+.role-admin .users-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.role-admin .credentials td:last-child { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-text); }
+
+/* ---------- New account drawer ---------- */
+.role-admin .drawer { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: flex-end; }
+.role-admin .drawer__scrim { position: absolute; inset: 0; background: var(--color-scrim); }
+.role-admin .drawer__panel {
+  position: relative; width: 460px; max-width: 100%; height: 100%;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 24px;
+  padding: 32px; border-left: 1px solid var(--color-line); background: var(--color-bg); overflow-y: auto;
+}
+.role-admin .drawer__title { font-size: 24px; font-weight: 600; }
+.role-admin .drawer__footer { display: flex; gap: 12px; }
+.role-admin .drawer__footer .btn--primary { flex: 1; }
+
+/* ---------- System settings ---------- */
+.role-admin .danger-zone { border-color: var(--color-line); }
+
+@media (max-width: 1100px) {
+  .role-admin .users-layout,
+  .role-admin .settings-layout,
+  .role-admin .courses-layout { grid-template-columns: 1fr; }
+}
