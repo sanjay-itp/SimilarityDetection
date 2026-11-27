@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../services/api.js";
 import Modal from "../../components/Modal.jsx";
 import { ErrorMessage, Field } from "../../components/ui.jsx";
+import { roman } from "../../utils/format.js";
 
 const COPY = {
   student: { title: "Add student", subtitle: "They can sign in as soon as you save.", submit: "Create student" },
@@ -28,6 +29,7 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(null);
+  const [mail, setMail] = useState(null); // { state: "sending" | "sent" | "failed", message? }
   const copy = COPY[role];
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
       setForm(blank(role, faculties));
       setError(null);
       setCreated(null);
+      setMail(null);
     }
     // Only reset when the popup opens, not when the list behind it reloads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,6 +58,7 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
       const result = await api.createUser(form);
       setCreated(result);
       onCreated?.(result);
+      if (form.sendInvite && (role === "student" || role === "teacher")) emailDetails(result);
     } catch (err) {
       setError(err);
     } finally {
@@ -62,10 +66,21 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
     }
   }
 
+  async function emailDetails(result) {
+    setMail({ state: "sending" });
+    try {
+      await api.sendAccountEmail({ role, name: result.user.name, email: result.user.email, tempPassword: result.tempPassword });
+      setMail({ state: "sent" });
+    } catch (err) {
+      setMail({ state: "failed", message: err.message });
+    }
+  }
+
   function addAnother() {
     setForm(blank(role, faculties));
     setCreated(null);
     setError(null);
+    setMail(null);
   }
 
   if (created) {
@@ -74,7 +89,7 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
         open={open}
         onClose={onClose}
         title="Account created"
-        subtitle="Share the temporary password with them. It is shown only once."
+        subtitle={mail?.state === "sent" ? "The details below were emailed to them. The password is shown only once." : "Share the temporary password with them. It is shown only once."}
         onSubmit={(e) => e.preventDefault()}
         footer={
           <>
@@ -88,7 +103,20 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
           <div><dt>Email</dt><dd>{created.user.email}</dd></div>
           {created.user.studentId && <div><dt>Student ID</dt><dd>{created.user.studentId}</dd></div>}
           <div><dt>Temporary password</dt><dd><code>{created.tempPassword}</code></dd></div>
+          {mail && (
+            <div>
+              <dt>Account email</dt>
+              <dd>
+                {mail.state === "sending" && "Sending…"}
+                {mail.state === "sent" && `Sent to ${created.user.email}`}
+                {mail.state === "failed" && <span className="error">Not sent. {mail.message}</span>}
+              </dd>
+            </div>
+          )}
         </dl>
+        {mail?.state === "failed" && (
+          <button className="btn btn--small" type="button" onClick={() => emailDetails(created)}>Try sending again</button>
+        )}
       </Modal>
     );
   }
@@ -137,7 +165,7 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
             <Field label="Semester" htmlFor="acc-semester">
               <select className="input" id="acc-semester" value={form.semester} onChange={set("semester")}>
                 {Array.from({ length: programme?.semesters ?? 8 }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>Semester {n}</option>
+                  <option key={n} value={n}>Semester {roman(n)}</option>
                 ))}
               </select>
             </Field>
@@ -170,10 +198,12 @@ export default function AccountModal({ role, open, onClose, faculties = [], cour
         </>
       )}
 
-      <label className="check">
-        <input type="checkbox" checked={form.sendInvite} onChange={set("sendInvite")} />
-        Email them a sign-in link (needs a mail server; the temporary password is also shown here)
-      </label>
+      {role !== "admin" && (
+        <label className="check">
+          <input type="checkbox" checked={form.sendInvite} onChange={set("sendInvite")} />
+          Email them their name, email and temporary password
+        </label>
+      )}
 
       <ErrorMessage error={error} />
     </Modal>

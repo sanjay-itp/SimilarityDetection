@@ -1,7 +1,7 @@
 /* ==========================================================================
    Origyn · student.css
    Student workspace only (.role-student):
-   dashboard, my courses, my assignments, submit assignment, receipt.
+   dashboard, my courses, my assignments, submit assignment.
    ========================================================================== */
 
 /* ---------- My Courses ---------- */
@@ -13,22 +13,5 @@
 .role-student .course-card__meta { font-size: 12px; color: var(--color-muted); }
 
 /* ---------- Submit assignment ---------- */
-.role-student .submit-layout { grid-template-columns: minmax(0, 1fr) 340px; }
+.role-student .submit-card { max-width: 760px; }
 .role-student .brief { color: var(--color-muted); white-space: pre-line; }
-.role-student .tips { display: flex; flex-direction: column; gap: 12px; margin: 0; padding-left: 18px; font-size: 13px; color: var(--color-muted); }
-
-/* ---------- Submission receipt ---------- */
-.role-student .receipt { max-width: 640px; gap: 4px; }
-.role-student .kv { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--color-line); }
-.role-student .kv:last-child { border-bottom: 0; }
-.role-student .kv dt { color: var(--color-muted); }
-.role-student .kv dd { font-weight: 500; text-align: right; }
-
-@media (max-width: 1100px) {
-  .role-student .submit-layout { grid-template-columns: 1fr; }
-}
-
-@media print {
-  .role-student .sidebar, .role-student .actions { display: none; }
-  .role-student .main { padding: 0; }
-}

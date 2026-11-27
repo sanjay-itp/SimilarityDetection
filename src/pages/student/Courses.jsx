@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { Empty, ErrorMessage, Loading, PageHeader, Tag } from "../../components/ui.jsx";
-import { daysUntil, dueAt, formatShort, shortTitle } from "../../utils/format.js";
+import { daysUntil, dueAt, formatShort, roman, shortTitle } from "../../utils/format.js";
 
 // Courses come from the administrator's set-up. Students cannot join courses themselves.
 export default function StudentCourses() {
@@ -17,12 +17,11 @@ export default function StudentCourses() {
     <>
       <PageHeader
         title="My Courses"
-        subtitle={`Semester ${me.semester} · ${courses.length} course${courses.length === 1 ? "" : "s"}`}
-        actions={<Tag strong>Semester {me.semester}</Tag>}
+        subtitle={`Semester ${roman(me.semester)} · ${courses.length} course${courses.length === 1 ? "" : "s"}`}
       />
 
       {courses.length === 0 ? (
-        <Empty>No courses yet. Your administrator sets up courses for your programme and semester.</Empty>
+        <Empty>No courses yet.</Empty>
       ) : (
         <section className="course-grid" aria-label="Courses">
           {courses.map((c) => {

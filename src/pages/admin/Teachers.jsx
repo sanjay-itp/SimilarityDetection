@@ -3,6 +3,7 @@ import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { Empty, ErrorMessage, Loading, PageHeader, Tabs, Tag } from "../../components/ui.jsx";
 import AccountModal from "./AccountModal.jsx";
+import UserDetails from "./UserDetails.jsx";
 import { useNewParam } from "./useNewParam.js";
 
 const STATUS = { active: "Active", invited: "Invited" };
@@ -11,6 +12,7 @@ const STATUS = { active: "Active", invited: "Invited" };
 export default function Teachers() {
   const [open, setOpen] = useNewParam();
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(null);
   const [faculty, setFaculty] = useState("all");
   const { data, loading, error, reload } = useAsync(() => api.listUsers(), []);
 
@@ -67,8 +69,8 @@ export default function Teachers() {
               </thead>
               <tbody>
                 {rows.map((t) => (
-                  <tr key={t.id}>
-                    <td>{t.name}</td>
+                  <tr key={t.id} className="clickable" onClick={() => setSelected(t)}>
+                    <td><button type="button" className="link-btn">{t.name}</button></td>
                     <td>{t.email}</td>
                     <td>{t.faculty || "-"}</td>
                     <td>{t.courses.length ? t.courses.join(", ") : "None yet"}</td>
@@ -81,6 +83,7 @@ export default function Teachers() {
         )}
       </section>
 
+      <UserDetails user={selected} courses={courses} faculties={faculties} onClose={() => setSelected(null)} />
       <AccountModal role="teacher" open={open} onClose={() => setOpen(false)} faculties={faculties} courses={courses} onCreated={reload} />
     </>
   );

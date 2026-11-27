@@ -36,7 +36,6 @@
 }
 
 /* Roster */
-.role-teacher .roster { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ---------- Similarity report ---------- */
 .role-teacher .report-layout { grid-template-columns: minmax(0, 1fr) 340px; }

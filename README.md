@@ -8,7 +8,7 @@ This repository contains the **front end only** (React + Vite). It follows the "
 > `src/services/api.js` is a mock that keeps all data in the browser's `localStorage`. That means:
 > - Data is **not shared between computers**. A teacher on one PC will not see a student's submission made on another PC.
 > - Uploaded files are not stored. Only the file name and size are saved.
-> - The similarity scores in the demo are fixed sample values. "Run comparison" gives placeholder scores, not real ones.
+> - The similarity scores in the demo are fixed sample values. New submissions get a placeholder score the moment they arrive, not a real one.
 > - Passwords are stored in plain text in the mock.
 >
 > All of this goes away once `api.js` is pointed at the real Origyn server (see [Connecting the backend](#connecting-the-backend)).
@@ -17,7 +17,7 @@ This repository contains the **front end only** (React + Vite). It follows the "
 
 ## Requirements
 
-- Node.js 18 or newer
+- Node.js 20 or newer
 - npm
 
 ## Run it on your computer (development)
@@ -57,6 +57,21 @@ location / {
 }
 ```
 
+## Account emails
+
+When an admin adds a student or teacher (one at a time, or by CSV import), Origyn emails them their name, email and temporary password. The browser cannot send email by itself, so a small mail service in `server/mail-server.js` does it.
+
+1. Copy `.env.example` to `.env` and fill in your institution's SMTP server, user, password and sender address. `.env` is never committed.
+2. Run the mail service next to the app, in its own terminal:
+
+```bash
+npm run mail
+```
+
+The dev server (`npm run dev`) and the hosted app (`npm run host`) forward `/api/mail/*` to it. If the mail service is not running or SMTP is not set up, the account is still created, the popup says the email was not sent and why, and the temporary password is shown so the admin can hand it over.
+
+The mail service only listens on `127.0.0.1` and allows 60 emails a minute by default (`MAIL_RATE_PER_MIN`). It is a stopgap: once the real backend exists, it should send this email itself as part of creating the account.
+
 ## First run: the host becomes the admin
 
 1. Open Origyn in a browser. With no administrator yet, it shows **Set up Origyn**.
@@ -67,7 +82,8 @@ location / {
    - add students under **Students** (Add student opens a popup form), or import them from a CSV file (`name, email, student_id, programme, semester`)
    - add teachers under **Teachers** (Add teacher opens a popup form where you can also assign courses)
    - add more administrators under **System settings → Administrators**
-   - hand each person the **temporary password** Origyn shows in the popup right after the account is created
+   - each new student and teacher is emailed their temporary password (see [Account emails](#account-emails)); the popup also shows it once
+   - click a name in the Students or Teachers list to see that person's details
 
 Students see every course for their programme and semester. They cannot join courses themselves.
 
@@ -91,6 +107,8 @@ The admin is the account you created during setup.
 ## Project structure
 
 ```
+server/
+  mail-server.js           sends "account created" emails over SMTP (npm run mail)
 src/
   main.jsx                 entry point, loads base.css
   App.jsx                  all routes
@@ -104,9 +122,9 @@ src/
   layouts/                 StudentLayout, TeacherLayout, AdminLayout
   pages/
     auth/                  Login, Setup
-    student/               Dashboard, Courses, Assignments, SubmitAssignment, Receipt
+    student/               Dashboard, Courses, Assignments, SubmitAssignment (also the "View only" page)
     teacher/               Dashboard, Courses, Course (+ AssignmentForm), ReviewQueue, Submissions, Report
-    admin/                 Dashboard, Students, Teachers, AccountModal (add-account popup), CoursesTerms, SystemSettings
+    admin/                 Dashboard, Students, Teachers, AccountModal (add-account popup), UserDetails, CoursesTerms, SystemSettings
   styles/
     base.css               tokens + shared components (all roles)
     auth.css               sign-in and setup only
@@ -149,4 +167,22 @@ Pages never touch storage directly; they only call functions on `api` in `src/se
 9. Admin user list: no Reset password or Disable actions.
 10. No icons.
 
-Not built yet (shown greyed out in the menus): Notifications, Profile, Analytics, teacher Settings, Audit log.
+### Phase 1 changes
+
+Student
+- Dashboard: Submit and Open all buttons are blue; no Teacher notes card or note activity; no Notifications menu item.
+- My Courses: no semester button and no help note under an empty list.
+- Semesters show as Roman numerals (I to VIII) everywhere.
+- My Assignments: "View receipt" is now "View only", a read-only page with the brief and the files handed in.
+- Submit assignment: several files at once, up to the upload limit (10 MB by default) in total. No "Before you submit" panel, no confirmation checkbox. After submitting or cancelling, the student goes straight back to My Assignments. The receipt page is gone.
+
+Teacher
+- Dashboard: title is "Good morning/afternoon/evening, <name>" with no line under it; no Run comparison button (submissions are checked as they arrive); no Confirmed concerns card; no "Across ..." line on Active assignments.
+- Course page: no View roster button.
+
+Admin
+- Dashboard: Export semester report, Add teacher and Add student buttons are replaced by **Add new course**, which opens the course form on Courses & terms.
+- Students and Teachers: click a row to see that person's details.
+- New student and teacher accounts are emailed their details (see [Account emails](#account-emails)).
+
+Not built yet (shown greyed out in the menus): Profile, Analytics, teacher Settings, Audit log.

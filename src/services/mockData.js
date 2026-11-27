@@ -138,7 +138,7 @@ export function seedDemoData(d) {
     { id: "act-1", title: "Teacher account created", meta: "r.suri@ics.dev", at: iso(0, 10, 24) },
     { id: "act-2", title: "Threshold changed 35% to 40%", meta: "ENGL 210 · Reading response", at: iso(0, 9, 51) },
     { id: "act-3", title: "Concern confirmed", meta: "Essay 1 · ENGL 210", at: iso(-1, 15) },
-    { id: "act-4", title: "Semester 2 opened", meta: "BCA", at: iso(-1, 9) },
+    { id: "act-4", title: "Semester II opened", meta: "BCA", at: iso(-1, 9) },
     { id: "act-5", title: "Demo data loaded", meta: "Sample courses, teachers and students", at: iso(0, 8) }
   );
 }

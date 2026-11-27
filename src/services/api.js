@@ -15,6 +15,7 @@
    ========================================================================== */
 
 import { seedDemoData } from "./mockData.js";
+import { roman } from "../utils/format.js";
 
 const KEY = "origyn.db.v1";
 const DAY = 86400000;
@@ -180,6 +181,23 @@ function buildUser(d, input) {
   return { user, password };
 }
 
+/**
+ * MOCK similarity check: gives the submission a placeholder score and flags it
+ * for review when it reaches the threshold. The real backend runs the
+ * similarity engine here, automatically, when a submission arrives.
+ */
+function scoreSubmission(d, a, s) {
+  const hash = [...s.id].reduce((n, ch) => n + ch.charCodeAt(0), 0);
+  s.highestMatch = 5 + (hash % 26);
+  if (s.highestMatch >= a.threshold) {
+    d.pairs.push({
+      id: uid("pair"), assignmentId: a.id, a: { submissionId: s.id },
+      b: { label: "Earlier submissions", fileName: "" }, score: s.highestMatch,
+      status: "pending", textA: "", textB: "", passages: [], createdAt: now(),
+    });
+  }
+}
+
 function parseCsv(text) {
   const rows = [];
   for (const line of String(text).split(/\r?\n/)) {
@@ -298,43 +316,41 @@ export const api = {
     return reply({ ...withCourse(d, a), mySubmission, settings: { formats, maxUploadMb } });
   },
 
-  async submitAssignment({ studentId, assignmentId, file }) {
+  /** files: one or more { name, size }. Their combined size must stay under settings.maxUploadMb. */
+  async submitAssignment({ studentId, assignmentId, files }) {
     const d = read();
     const a = d.assignments.find((x) => x.id === assignmentId);
     if (!a) fail("Assignment not found.");
     if (!isOpen(a)) fail("This assignment is closed.");
-    if (!file) fail("Choose a file first.");
-    if (!d.settings.formats.includes(ext(file.name))) fail(`Allowed formats: ${d.settings.formats.join(", ")}.`);
-    if (file.size > d.settings.maxUploadMb * 1048576) fail(`The maximum file size is ${d.settings.maxUploadMb} MB.`);
+    if (!files?.length) fail("Choose at least one file.");
+    const bad = files.find((f) => !d.settings.formats.includes(ext(f.name)));
+    if (bad) fail(`${bad.name}: allowed formats are ${d.settings.formats.join(", ")}.`);
+    const total = files.reduce((n, f) => n + f.size, 0);
+    if (total > d.settings.maxUploadMb * 1048576) fail(`Your files can add up to ${d.settings.maxUploadMb} MB in total.`);
 
-    d.submissions = d.submissions.filter((s) => !(s.assignmentId === assignmentId && s.studentId === studentId));
+    const replaced = d.submissions.filter((s) => s.assignmentId === assignmentId && s.studentId === studentId).map((s) => s.id);
+    d.submissions = d.submissions.filter((s) => !replaced.includes(s.id));
+    // A resubmission drops flags still waiting for review; decided ones stay on record.
+    d.pairs = d.pairs.filter(
+      (p) => p.status !== "pending" || (!replaced.includes(p.a.submissionId) && !replaced.includes(p.b.submissionId))
+    );
     const submission = {
       id: uid("sub"),
       assignmentId,
       studentId,
-      fileName: file.name,
-      fileSize: file.size,
+      files: files.map((f) => ({ name: f.name, size: f.size })),
+      fileName: files.map((f) => f.name).join(", "),
+      fileSize: total,
       submittedAt: now(),
       receiptId: makeReceiptId(),
       highestMatch: null,
       teacherNote: null,
     };
     d.submissions.push(submission);
+    scoreSubmission(d, a, submission);
     log(d, "Submission received", `${a.title.split(":")[0]} · ${userName(d, studentId)}`);
     write(d);
     return reply(submission);
-  },
-
-  async getReceipt(studentId, submissionId) {
-    const d = read();
-    const s = d.submissions.find((x) => x.id === submissionId && x.studentId === studentId);
-    if (!s) fail("Receipt not found.");
-    const student = d.users.find((u) => u.id === s.studentId);
-    return reply({
-      ...s,
-      assignment: withCourse(d, d.assignments.find((a) => a.id === s.assignmentId)),
-      student: safeUser(student),
-    });
   },
 
   /* ---------- Teacher ---------- */
@@ -363,7 +379,6 @@ export const api = {
         .filter((p) => p.status === "pending")
         .sort((x, y) => y.score - x.score)
         .map((p) => pairView(d, p)),
-      concerns: pairs.filter((p) => p.status === "concern").length,
     });
   },
 
@@ -452,34 +467,6 @@ export const api = {
     });
   },
 
-  /**
-   * MOCK: gives every unchecked submission a score. The real backend runs the
-   * similarity engine here and creates pairs for scores above the threshold.
-   */
-  async runComparison(teacherId) {
-    const d = read();
-    const courseIds = d.courses.filter((c) => c.teacherId === teacherId).map((c) => c.id);
-    const assignments = d.assignments.filter((a) => courseIds.includes(a.courseId));
-    let checked = 0;
-    for (const a of assignments) {
-      for (const s of d.submissions.filter((x) => x.assignmentId === a.id && x.highestMatch == null)) {
-        const hash = [...s.id].reduce((n, ch) => n + ch.charCodeAt(0), 0);
-        s.highestMatch = 5 + (hash % 26);
-        if (s.highestMatch >= a.threshold) {
-          d.pairs.push({
-            id: uid("pair"), assignmentId: a.id, a: { submissionId: s.id },
-            b: { label: "Earlier submissions", fileName: "" }, score: s.highestMatch,
-            status: "pending", textA: "", textB: "", passages: [], createdAt: now(),
-          });
-        }
-        checked += 1;
-      }
-    }
-    if (checked) log(d, "Comparison run", `${checked} submission${checked === 1 ? "" : "s"} · ${userName(d, teacherId)}`);
-    write(d);
-    return reply({ checked });
-  },
-
   async getPair(teacherId, pairId) {
     const d = read();
     const p = d.pairs.find((x) => x.id === pairId);
@@ -562,6 +549,28 @@ export const api = {
     return reply({ user: safeUser(user), tempPassword: password });
   },
 
+  /**
+   * REAL CALL (not mocked): emails a new student or teacher their name, email
+   * and temporary password through the mail service (server/mail-server.js).
+   * Resolves { sent: true } or throws with the reason it was not sent.
+   */
+  async sendAccountEmail({ role, name, email, tempPassword }) {
+    const institution = read().institution?.name || "";
+    let res;
+    try {
+      res = await fetch("/api/mail/account-created", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, name, email, tempPassword, institution, loginUrl: `${window.location.origin}/login` }),
+      });
+    } catch {
+      fail("The mail service is not reachable. Start it with npm run mail.");
+    }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) fail(body.error || (res.status === 404 || res.status >= 500 ? "The mail service is not running. Start it with npm run mail." : `Email failed (${res.status}).`));
+    return { sent: true };
+  },
+
   /** CSV columns: name, email, student_id, programme, semester (header row optional). */
   async importStudents(csvText) {
     const d = read();
@@ -630,7 +639,7 @@ export const api = {
     for (const u of d.users) {
       if (u.role === "student" && u.programme === f.code && u.semester < f.semesters) u.semester += 1;
     }
-    log(d, `Semester ${f.current} opened`, f.code);
+    log(d, `Semester ${roman(f.current)} opened`, f.code);
     write(d);
     return reply(f);
   },

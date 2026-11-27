@@ -3,7 +3,7 @@ import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { DEMO_PASSWORD } from "../../services/mockData.js";
 import { Empty, ErrorMessage, Loading, PageHeader, StatCard } from "../../components/ui.jsx";
-import { download, relative, toCsv } from "../../utils/format.js";
+import { relative } from "../../utils/format.js";
 
 const CHART_HEIGHT = 200;
 
@@ -16,25 +16,12 @@ export default function AdminDashboard() {
   const maxRate = Math.max(1, ...flagRate.map((c) => c.rate));
   const topRate = Math.max(...flagRate.map((c) => c.rate), 0);
 
-  function exportReport() {
-    download(
-      "Origyn semester report.csv",
-      toCsv([["Course", "Submissions", "Flag rate"], ...flagRate.map((c) => [c.code, c.total, `${c.rate}%`])])
-    );
-  }
-
   return (
     <>
       <PageHeader
         title="System overview"
         subtitle={`${institution?.name ?? "Origyn"}${institution?.department ? ` · ${institution.department}` : ""}`}
-        actions={
-          <>
-            <button className="btn" type="button" onClick={exportReport}>Export semester report</button>
-            <Link className="btn" to="/admin/teachers?new=1">Add teacher</Link>
-            <Link className="btn btn--primary" to="/admin/students?new=1">Add student</Link>
-          </>
-        }
+        actions={<Link className="btn btn--primary" to="/admin/courses?new=1">Add new course</Link>}
       />
 
       {institution?.demo && (

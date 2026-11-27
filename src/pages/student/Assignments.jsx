@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { Empty, ErrorMessage, Loading, PageHeader, Tabs, Tag } from "../../components/ui.jsx";
-import { dueAt, formatShort } from "../../utils/format.js";
+import { dueAt, formatShort, roman } from "../../utils/format.js";
 
 function statusOf(a) {
   if (a.mySubmission?.teacherNote) return { label: "Teacher note", strong: true };
@@ -32,7 +32,7 @@ export default function StudentAssignments() {
     <>
       <PageHeader
         title="My Assignments"
-        subtitle={course ? `${course.code} · ${course.name}` : `All courses · Semester ${data.me.semester}`}
+        subtitle={course ? `${course.code} · ${course.name}` : `All courses · Semester ${roman(data.me.semester)}`}
         actions={course && <button className="btn" type="button" onClick={() => setParams({})}>Show all courses</button>}
       />
 
@@ -71,7 +71,7 @@ export default function StudentAssignments() {
                     <td>{formatShort(dueAt(a), { time: true })}</td>
                     <td><Tag strong={status.strong}>{status.label}</Tag></td>
                     <td>
-                      {a.mySubmission && <Link to={`/student/receipts/${a.mySubmission.id}`}>View receipt</Link>}
+                      {a.mySubmission && <Link to={`/student/assignments/${a.id}`}>View only</Link>}
                       {!a.mySubmission && a.isOpen && <Link to={`/student/assignments/${a.id}/submit`}>Submit</Link>}
                       {!a.mySubmission && !a.isOpen && <span className="muted">Closed</span>}
                     </td>

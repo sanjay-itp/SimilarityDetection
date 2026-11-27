@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { Empty, ErrorMessage, Field, Loading, Notice, PageHeader } from "../../components/ui.jsx";
+import { roman } from "../../utils/format.js";
 
 export default function CoursesTerms() {
   const { data, loading, error, reload } = useAsync(() => api.getCoursesAndTerms(), []);
@@ -10,6 +12,17 @@ export default function CoursesTerms() {
   const [courseError, setCourseError] = useState(null);
   const [facultyError, setFacultyError] = useState(null);
   const [notice, setNotice] = useState("");
+  const [params, setParams] = useSearchParams();
+  const ready = Boolean(data);
+
+  // Reached from the dashboard's "Add new course" (?new=1): jump to the course form.
+  useEffect(() => {
+    if (!ready || params.get("new") !== "1") return;
+    const code = document.getElementById("c-code");
+    code?.scrollIntoView({ behavior: "smooth", block: "center" });
+    code?.focus();
+    setParams({}, { replace: true });
+  }, [ready, params, setParams]);
 
   if (loading && !data) return <Loading />;
   if (error) return <ErrorMessage error={error} />;
@@ -48,10 +61,10 @@ export default function CoursesTerms() {
   }
 
   async function nextSemester(f) {
-    if (!window.confirm(`Open Semester ${f.current + 1} for ${f.code}? Every ${f.code} student moves forward one semester.`)) return;
+    if (!window.confirm(`Open Semester ${roman(f.current + 1)} for ${f.code}? Every ${f.code} student moves forward one semester.`)) return;
     try {
       await api.openNextSemester(f.code);
-      setNotice(`${f.code} is now in Semester ${f.current + 1}.`);
+      setNotice(`${f.code} is now in Semester ${roman(f.current + 1)}.`);
       reload();
     } catch (err) {
       setNotice(err.message);
@@ -81,7 +94,7 @@ export default function CoursesTerms() {
                   <tbody>
                     {courses.map((c) => (
                       <tr key={c.id}>
-                        <td>{c.code}</td><td>{c.name}</td><td>{c.programme} · Sem {c.semester}</td>
+                        <td>{c.code}</td><td>{c.name}</td><td>{c.programme} · Sem {roman(c.semester)}</td>
                         <td>{c.teacherName}</td><td>{c.studentCount}</td>
                       </tr>
                     ))}
@@ -99,7 +112,7 @@ export default function CoursesTerms() {
               <div className="row" key={f.code}>
                 <div>
                   <div className="row__title">{f.code} · {f.name}</div>
-                  <div className="row__meta">Semesters 1 to {f.semesters} · current: Semester {f.current}</div>
+                  <div className="row__meta">Semesters I to {roman(f.semesters)} · current: Semester {roman(f.current)}</div>
                 </div>
                 <div className="row__actions">
                   <button className="btn btn--small" type="button" disabled={f.current >= f.semesters} onClick={() => nextSemester(f)}>
@@ -138,7 +151,7 @@ export default function CoursesTerms() {
               <Field label="Semester" htmlFor="c-sem">
                 <select className="input" id="c-sem" value={course.semester || selectedProgramme?.current} onChange={setC("semester")}>
                   {Array.from({ length: selectedProgramme?.semesters ?? 8 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>Semester {n}</option>
+                    <option key={n} value={n}>Semester {roman(n)}</option>
                   ))}
                 </select>
               </Field>

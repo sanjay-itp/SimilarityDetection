@@ -58,6 +58,14 @@ export function greeting() {
   return "Good evening";
 }
 
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+
+/** Semester number as a Roman numeral: 2 -> "II". */
+export function roman(n) {
+  const i = Number(n);
+  return ROMAN[i - 1] ?? String(n ?? "");
+}
+
 export const firstName = (name = "") => name.split(" ")[0];
 export const shortTitle = (title = "") => title.split(":")[0];
 

@@ -66,3 +66,8 @@
   .role-admin .modal { align-items: flex-end; padding: 0; }
   .role-admin .modal__panel { max-height: 92vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 }
+
+/* Clickable rows in the Students / Teachers lists open the details popup */
+.role-admin .table tr.clickable { cursor: pointer; }
+.role-admin .table tr.clickable:hover td { background: var(--color-soft); }
+.role-admin .table tr.clickable .link-btn { font-size: inherit; text-align: left; }

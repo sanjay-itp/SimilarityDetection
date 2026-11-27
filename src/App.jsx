@@ -14,7 +14,6 @@ import StudentDashboard from "./pages/student/Dashboard.jsx";
 import StudentCourses from "./pages/student/Courses.jsx";
 import StudentAssignments from "./pages/student/Assignments.jsx";
 import SubmitAssignment from "./pages/student/SubmitAssignment.jsx";
-import Receipt from "./pages/student/Receipt.jsx";
 
 import TeacherDashboard from "./pages/teacher/Dashboard.jsx";
 import TeacherCourses from "./pages/teacher/Courses.jsx";
@@ -43,8 +42,8 @@ export default function App() {
               <Route index element={<StudentDashboard />} />
               <Route path="courses" element={<StudentCourses />} />
               <Route path="assignments" element={<StudentAssignments />} />
+              <Route path="assignments/:assignmentId" element={<SubmitAssignment readOnly />} />
               <Route path="assignments/:assignmentId/submit" element={<SubmitAssignment />} />
-              <Route path="receipts/:submissionId" element={<Receipt />} />
             </Route>
 
             <Route path="/teacher" element={<RequireRole role="teacher"><TeacherLayout /></RequireRole>}>

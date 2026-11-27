@@ -1,8 +1,10 @@
 import { useRef, useState } from "react";
+import { roman } from "../../utils/format.js";
 import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { Empty, ErrorMessage, Loading, Notice, PageHeader, Tabs, Tag } from "../../components/ui.jsx";
 import AccountModal from "./AccountModal.jsx";
+import UserDetails from "./UserDetails.jsx";
 import Credentials from "./Credentials.jsx";
 import { useNewParam } from "./useNewParam.js";
 
@@ -12,6 +14,7 @@ const STATUS = { active: "Active", invited: "Invited" };
 export default function Students() {
   const [open, setOpen] = useNewParam();
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(null);
   const [programme, setProgramme] = useState("all");
   const [imported, setImported] = useState([]);
   const [importNote, setImportNote] = useState("");
@@ -21,7 +24,7 @@ export default function Students() {
   if (loading && !data) return <Loading />;
   if (error) return <ErrorMessage error={error} />;
 
-  const { faculties } = data;
+  const { faculties, courses } = data;
   const students = data.users.filter((u) => u.role === "student");
   const q = query.trim().toLowerCase();
   const rows = students.filter(
@@ -36,12 +39,28 @@ export default function Students() {
     if (!file) return;
     const result = await api.importStudents(await file.text());
     setImported(result.created);
-    setImportNote(
-      result.skipped.length
-        ? `Skipped ${result.skipped.length} line${result.skipped.length === 1 ? "" : "s"}: ${result.skipped.map((s) => `line ${s.line} (${s.reason})`).join("; ")}`
-        : result.created.length ? "" : "No students found in that file."
-    );
+    const skipped = result.skipped.length
+      ? `Skipped ${result.skipped.length} line${result.skipped.length === 1 ? "" : "s"}: ${result.skipped.map((s) => `line ${s.line} (${s.reason})`).join("; ")}`
+      : result.created.length ? "" : "No students found in that file.";
+    setImportNote(skipped);
     reload();
+
+    // Email each new student their account details, one at a time.
+    if (!result.created.length) return;
+    setImportNote([skipped, `Emailing ${result.created.length} student${result.created.length === 1 ? "" : "s"}…`].filter(Boolean).join(" "));
+    const failed = [];
+    for (const a of result.created) {
+      try {
+        await api.sendAccountEmail({ role: "student", ...a });
+      } catch (err) {
+        failed.push({ email: a.email, reason: err.message });
+      }
+    }
+    const sent = result.created.length - failed.length;
+    const mailNote = failed.length
+      ? `Emailed ${sent} of ${result.created.length}. Not sent to ${failed.map((f) => f.email).join(", ")}: ${failed[0].reason}`
+      : `Emailed account details to all ${sent} new student${sent === 1 ? "" : "s"}.`;
+    setImportNote([skipped, mailNote].filter(Boolean).join(" "));
   }
 
   return (
@@ -97,12 +116,12 @@ export default function Students() {
               </thead>
               <tbody>
                 {rows.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.name}</td>
+                  <tr key={s.id} className="clickable" onClick={() => setSelected(s)}>
+                    <td><button type="button" className="link-btn">{s.name}</button></td>
                     <td>{s.studentId || "-"}</td>
                     <td>{s.email}</td>
                     <td>{s.programme}</td>
-                    <td>{s.semester}</td>
+                    <td>{roman(s.semester)}</td>
                     <td><Tag strong={s.status === "invited"}>{STATUS[s.status] ?? s.status}</Tag></td>
                   </tr>
                 ))}
@@ -115,6 +134,7 @@ export default function Students() {
         </p>
       </section>
 
+      <UserDetails user={selected} courses={courses} faculties={faculties} onClose={() => setSelected(null)} />
       <AccountModal role="student" open={open} onClose={() => setOpen(false)} faculties={faculties} onCreated={reload} />
     </>
   );

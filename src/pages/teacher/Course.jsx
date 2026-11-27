@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useAsync } from "../../hooks/useAsync.js";
 import { api } from "../../services/api.js";
 import { Empty, ErrorMessage, Loading, Notice, PageHeader, Tabs, Tag } from "../../components/ui.jsx";
-import { dueAt, formatDate, formatShort } from "../../utils/format.js";
+import { dueAt, formatDate, formatShort, roman } from "../../utils/format.js";
 import AssignmentForm from "./AssignmentForm.jsx";
 
 function statusLabel(a) {
@@ -17,7 +17,6 @@ export default function TeacherCourse() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(null);
-  const [showRoster, setShowRoster] = useState(false);
   const [notice, setNotice] = useState("");
   const { data, loading, error, reload } = useAsync(() => api.getTeacherCourse(user.id, courseId), [user.id, courseId]);
   if (loading && !data) return <Loading />;
@@ -43,14 +42,9 @@ export default function TeacherCourse() {
     <>
       <PageHeader
         title={`${course.code} · ${course.name}`}
-        subtitle={`${course.programme} · Semester ${course.semester} · ${students.length} student${students.length === 1 ? "" : "s"}`}
+        subtitle={`${course.programme} · Semester ${roman(course.semester)} · ${students.length} student${students.length === 1 ? "" : "s"}`}
         actions={
-          <>
-            <button className="btn" type="button" onClick={() => setShowRoster((s) => !s)}>
-              {showRoster ? "Hide roster" : "View roster"}
-            </button>
-            <button className="btn btn--primary" type="button" onClick={focusForm}>New assignment</button>
-          </>
+          <button className="btn btn--primary" type="button" onClick={focusForm}>New assignment</button>
         }
       />
 
@@ -64,17 +58,6 @@ export default function TeacherCourse() {
       )}
 
       <Notice onClose={() => setNotice("")}>{notice}</Notice>
-
-      {showRoster && (
-        <section className="card" aria-labelledby="roster-title">
-          <h2 className="card__title" id="roster-title">Roster</h2>
-          {students.length === 0 ? (
-            <p className="muted">No students in {course.programme} Semester {course.semester} yet.</p>
-          ) : (
-            <div className="roster">{students.map((s) => <Tag key={s.id}>{s.name}</Tag>)}</div>
-          )}
-        </section>
-      )}
 
       <div className="layout-side course-layout">
         <section className="card" aria-labelledby="assignments-title">
